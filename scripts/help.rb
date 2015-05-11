@@ -42,10 +42,10 @@ command 'help', 'Show command help. Syntax: help [command]' do
     reply command[:help]
   else
 
-    if name.lstrip.to_i < 1
+    if name.to_i < 1
       raise "There is no help available for that command."
     else
-      list_commands(name.lstrip.to_i)
+      list_commands(name.to_i)
     end
   end
 
