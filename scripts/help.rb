@@ -29,20 +29,27 @@ register "Provide on-protocol help for bot scripts and commands."
 # "Show a description of the given script or a list of all scripts. Parameters: [script]"
 
 command 'help', 'Show command help. Syntax: help [command]' do
-  if @params.empty?
-    list_commands
+  if @params.empty? 
+    list_commands 1
     next
   end
-
+  
   name = @params.shift.downcase
 
-  unless Bot::Commands::COMMANDS.has_key? name
-    raise "There is no help available for that command."
+  if Bot::Commands::COMMANDS.has_key? name
+
+    command = Bot::Commands::COMMANDS[name]
+    reply command[:help]
+  else
+
+    if name.lstrip.to_i < 1
+      raise "There is no help available for that command."
+    else
+      list_commands(name.lstrip.to_i)
+    end
   end
 
-  command = Bot::Commands::COMMANDS[name]
 
-  reply command[:help]
 end
 
 command 'script', 'Show script info. Syntax: script [name]' do
@@ -66,16 +73,25 @@ end
 
 
 helpers do
-  def list_commands
-    if get_config :multi_line, false
-      s = Bot::Commands::COMMANDS.keys.sort.join(', ').chars.to_a
+  def list_commands page
+    if get_config :multi_line, true
+      s = Bot::Commands::COMMANDS.keys.sort.join(', ')
       line_length = get_config(:split_length, 400)
-      cmd_ary = []
-      until s.empty?
-        cmd_ary <<  s.shift(line_length).join
+      pages = []
+      current_page = 0
+      last_break = 0
+      while last_break < s.length do
+        s.length < line_length + last_break ? line_length = s.length - last_break : 
+        precut = s[last_break, line_length]
+        pagelen = precut.rindex(',')
+        pages[current_page] = s[last_break, pagelen - 0]
+        last_break = pagelen + last_break + 2
+        current_page = current_page + 1
       end
-      cmd_ary.each do |cmd|
-        reply cmd
+      if page-1 < pages.length
+        reply pages[page - 1] + " [#{(page)}/#{pages.length}]"
+      else
+        raise "Maximum page number is #{pages.length}."
       end
     else
       reply Bot::Commands::COMMANDS.keys.sort.join(', ')
